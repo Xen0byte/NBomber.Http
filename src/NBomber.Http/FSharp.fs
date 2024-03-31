@@ -7,6 +7,12 @@ open System.Text.Json
 open System.Threading
 open Serilog
 
+[<Struct>]
+type HttpResponse<'T> = {
+    Data: 'T
+    Response: HttpResponseMessage
+}
+
 type HttpClientArgs = {
     mutable HttpCompletion: HttpCompletionOption
     mutable CancellationToken: CancellationToken
@@ -166,7 +172,8 @@ module Http =
                 let body = response.Content.ReadAsStreamAsync().Result
                 let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
                 let value = JsonSerializer.Deserialize<'T>(body, jsonOptions)
-                { StatusCode = response.StatusCode.ToString(); IsError = false; SizeBytes = dataSize; Payload = Some value; Message = "" }
+                let httpRes = { Data = value; Response = response }
+                { StatusCode = response.StatusCode.ToString(); IsError = false; SizeBytes = dataSize; Payload = Some httpRes; Message = "" }
             else
                 { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = None; Message = "" }
     }

@@ -60,8 +60,8 @@ class SequentialSteps
                 var response = await Http.Send<UserData>(httpClient, request);
 
                 // user: UserData type
-                var user = response.Payload.Value;
-                var userId = response.Payload.Value.UserId;
+                var user = response.Payload.Value.Data;
+                var userId = user.UserId;
 
                 return response;
             });
