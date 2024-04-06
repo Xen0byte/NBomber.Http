@@ -53,6 +53,7 @@ open System.Net.Http
 open System.Net.Http.Headers
 open System.Text.Json
 open System.Threading
+open System.Threading.Tasks
 open NBomber.Contracts
 open NBomber.Http
 
@@ -81,24 +82,39 @@ module Http =
         let bodySize    = getBodySize response.Content
         bodySize + headersSize
 
-    let private tryLogRequest (clientArgs: HttpClientArgs, request: HttpRequestMessage) =
-        match clientArgs.Logger with
-        | Some logger ->
-            let headers = String.Join(", ", request.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
+    let private tryLogRequest (clientArgs: HttpClientArgs, request: HttpRequestMessage) = backgroundTask {
+        try
+            match clientArgs.Logger with
+            | Some logger ->
+                let headers = String.Join(", ", request.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
 
-            logger.Debug("HTTP Request:\n TraceId: {TraceId}\n Method: {Method}\n RequestUri: {RequestUri}\n HttpVersion: {HttpVersion}\n Headers: {Headers}\n Content: {Content}\n",
-                         clientArgs.TraceId, request.Method, request.RequestUri, request.Version, headers, request.Content.ReadAsStringAsync().Result)
-        | None -> ()
+                let! content =
+                    if isNull request.Content then Task.FromResult ""
+                    else request.Content.ReadAsStringAsync()
 
-    let private tryLogResponse (clientArgs: HttpClientArgs, response: HttpResponseMessage) =
-        match clientArgs.Logger with
-        | Some logger ->
-            let headers = String.Join(", ", response.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
+                logger.Debug("HTTP Request:\n TraceId: {TraceId}\n Method: {Method}\n RequestUri: {RequestUri}\n HttpVersion: {HttpVersion}\n Headers: {Headers}\n Content: {Content}\n",
+                             clientArgs.TraceId, request.Method, request.RequestUri, request.Version, headers, content)
+            | None -> ()
+        with
+        | ex -> clientArgs.Logger |> Option.iter(_.Fatal(ex.ToString()))
+    }
 
-            logger.Debug("HTTP Response:\n TraceId: {TraceId}\n HttpVersion: {HttpVersion}\n StatusCode: {StatusCode}\n ReasonPhrase: {ReasonPhrase}\n Headers: {Headers}\n Content: {Content}\n",
-                         clientArgs.TraceId, response.Version, response.StatusCode, response.ReasonPhrase, headers, response.Content.ReadAsStringAsync().Result)
+    let private tryLogResponse (clientArgs: HttpClientArgs, response: HttpResponseMessage) = backgroundTask {
+        try
+            match clientArgs.Logger with
+            | Some logger ->
+                let headers = String.Join(", ", response.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
 
-        | None -> ()
+                let! content =
+                    if isNull response.Content then Task.FromResult ""
+                    else response.Content.ReadAsStringAsync()
+
+                logger.Debug("HTTP Response:\n TraceId: {TraceId}\n HttpVersion: {HttpVersion}\n StatusCode: {StatusCode}\n ReasonPhrase: {ReasonPhrase}\n Headers: {Headers}\n Content: {Content}\n",
+                             clientArgs.TraceId, response.Version, response.StatusCode, response.ReasonPhrase, headers, content)
+            | None -> ()
+        with
+        | ex -> clientArgs.Logger |> Option.iter(_.Fatal(ex.ToString()))
+    }
 
     let createRequest (method: string) (url: string) =
         new HttpRequestMessage(
@@ -136,9 +152,9 @@ module Http =
         withJsonBody2 data null req
 
     let sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
-        tryLogRequest(clientArgs, request)
+        do! tryLogRequest(clientArgs, request)
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
-        tryLogResponse(clientArgs, response)
+        do! tryLogResponse(clientArgs, response)
 
         let reqSize = getRequestSize request
         let respSize = getResponseSize response
@@ -159,9 +175,9 @@ module Http =
     /// Send request and deserialize HTTP response JSON body to specified type 'T
     /// </summary>
     let sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
-        tryLogRequest(clientArgs, request)
+        do! tryLogRequest(clientArgs, request)
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
-        tryLogResponse(clientArgs, response)
+        do! tryLogResponse(clientArgs, response)
 
         let reqSize = getRequestSize request
         let respSize = getResponseSize response
