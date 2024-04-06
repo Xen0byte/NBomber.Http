@@ -152,9 +152,13 @@ module Http =
         withJsonBody2 data null req
 
     let sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
-        do! tryLogRequest(clientArgs, request)
+        if clientArgs.Logger.IsSome then
+            do! tryLogRequest(clientArgs, request)
+
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
-        do! tryLogResponse(clientArgs, response)
+
+        if clientArgs.Logger.IsSome then
+            do! tryLogResponse(clientArgs, response)
 
         let reqSize = getRequestSize request
         let respSize = getResponseSize response
@@ -175,9 +179,13 @@ module Http =
     /// Send request and deserialize HTTP response JSON body to specified type 'T
     /// </summary>
     let sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
-        do! tryLogRequest(clientArgs, request)
+        if clientArgs.Logger.IsSome then
+            do! tryLogRequest(clientArgs, request)
+
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
-        do! tryLogResponse(clientArgs, response)
+
+        if clientArgs.Logger.IsSome then
+            do! tryLogResponse(clientArgs, response)
 
         let reqSize = getRequestSize request
         let respSize = getResponseSize response
