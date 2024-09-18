@@ -143,7 +143,7 @@ module Http =
     let withJsonBody2 (data: 'T) (options: JsonSerializerOptions) (req: HttpRequestMessage) =
         let json = JsonSerializer.SerializeToUtf8Bytes(data, options)
         req.Content <- new ByteArrayContent(json)
-        req.Headers.TryAddWithoutValidation("Accept", "application/json") |> ignore
+        req.Headers.TryAddWithoutValidation("Content-Type", "application/json") |> ignore
         req
 
     /// Populates request body by serializing data record to JSON format.
