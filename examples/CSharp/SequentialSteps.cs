@@ -34,7 +34,8 @@ class SequentialSteps
             });
 
             // example of WithJsonBody<T>(data)
-            // populates request body by serializing data record to JSON format. Also, it adds HTTP header: "Accept": "application/json".
+            // populates request body by serializing data record to JSON format.
+            // Also, it adds HTTP header: "Content-Type": "application/json".
 
             var step2 = await Step.Run("step_2", context, async () =>
             {

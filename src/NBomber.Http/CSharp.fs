@@ -33,7 +33,6 @@ type Http =
     static member Send<'T>(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendTypedWithArgs client clientArgs request
 
-[<Extension>]
 type HttpExt =
 
     [<Extension>]
@@ -50,7 +49,7 @@ type HttpExt =
 
     /// <summary>
     /// Populates request body by serializing data record to JSON format.
-    /// Also, it adds HTTP header: "Accept": "application/json".
+    /// Also, it adds HTTP header: "Content-Type: application/json".
     /// </summary>
     [<Extension>]
     static member WithJsonBody(req: HttpRequestMessage,

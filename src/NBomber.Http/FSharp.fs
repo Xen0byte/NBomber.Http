@@ -51,6 +51,7 @@ namespace NBomber.Http.FSharp
 open System
 open System.Net.Http
 open System.Net.Http.Headers
+open System.Text
 open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
@@ -139,15 +140,14 @@ module Http =
         req
 
     /// Populates request body by serializing data record to JSON format.
-    /// Also, it adds HTTP header: "Accept": "application/json".
+    /// Also, it adds HTTP header: "Content-Type: application/json".
     let withJsonBody2 (data: 'T) (options: JsonSerializerOptions) (req: HttpRequestMessage) =
-        let json = JsonSerializer.SerializeToUtf8Bytes(data, options)
-        req.Content <- new ByteArrayContent(json)
-        req.Headers.TryAddWithoutValidation("Content-Type", "application/json") |> ignore
+        let json = JsonSerializer.Serialize(data, options)
+        req.Content <- new StringContent(json, Encoding.UTF8, "application/json")
         req
 
     /// Populates request body by serializing data record to JSON format.
-    /// Also, it adds HTTP header: "Accept": "application/json".
+    /// Also, it adds HTTP header: "Content-Type: application/json".
     let withJsonBody (data: 'T) (req: HttpRequestMessage) =
         withJsonBody2 data null req
 
