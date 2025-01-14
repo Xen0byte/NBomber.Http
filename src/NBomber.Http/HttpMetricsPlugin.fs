@@ -7,7 +7,7 @@ open System.Diagnostics.Tracing
 open System.Threading.Tasks
 
 open NBomber.Contracts
-open NBomber.Contracts.Stats
+open NBomber.Contracts.Metric
 open NBomber.Http.Constants
 
 type private HttpMetricsGrabber(metricsProvider: IMetricsProvider) =

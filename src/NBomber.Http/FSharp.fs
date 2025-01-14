@@ -55,7 +55,7 @@ open System.Text
 open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
-open NBomber.Contracts
+open NBomber.FSharp
 open NBomber.Http
 
 module Http =
@@ -166,9 +166,9 @@ module Http =
 
         return
             if response.IsSuccessStatusCode then
-                { StatusCode = response.StatusCode.ToString(); IsError = false; SizeBytes = dataSize; Payload = Some response; Message = "" }
+                Response.ok(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = response)
             else
-                { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = Some response; Message = "" }
+                Response.fail(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = response)
     }
 
     let send (client: HttpClient) (request: HttpRequestMessage) =
@@ -197,9 +197,9 @@ module Http =
                 let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
                 let value = JsonSerializer.Deserialize<'T>(body, jsonOptions)
                 let httpRes = { Data = value; Response = response }
-                { StatusCode = response.StatusCode.ToString(); IsError = false; SizeBytes = dataSize; Payload = Some httpRes; Message = "" }
+                Response.ok(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = httpRes)
             else
-                { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = None; Message = "" }
+                Response.fail(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize)
     }
 
     /// <summary>
